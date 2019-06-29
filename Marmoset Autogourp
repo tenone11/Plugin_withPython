@@ -1,0 +1,132 @@
+
+import mset,os,re
+
+defaultLowPolyPath = 'D:\\bake\\low\\'
+defaultHighPolyPath = 'D:\\bake\\high\\'
+
+win = mset.UIWindow()
+win.title = 'EGC_Bake_AutoGroup'
+infolabel = mset.UILabel()
+infolabel.text = 'Hipoly name: *_hi.FBX(OBJ)\tLowpoly name: *.FBX'
+hilabel = mset.UILabel()
+hilabel.text = "HiPoly folder:"
+hifolder = mset.UITextField()
+hifolder.value = defaultHighPolyPath
+lowlabel = mset.UILabel()
+lowlabel.text = "LowPoly folder:"
+lowfolder = mset.UITextField()
+lowfolder.value = defaultLowPolyPath
+list = mset.UIListBox()
+list.title = 'Himesh Set'
+list.addItem('FBX')
+list.addItem('OBJ')
+list.selectedItem = 0   #selected FBX first
+rotationlabel = mset.UILabel()
+rotationlabel.text = "Rotation:"
+rotationX = mset.UITextFieldFloat()
+rotationX.width = 35
+rotationY = mset.UITextFieldFloat()
+rotationY.width = 35
+rotationZ = mset.UITextFieldFloat()
+rotationZ.width = 35
+rotationX.value = -90
+rotationY.value = 0
+rotationZ.value =0
+closeBottum = mset.UIButton()
+closeBottum.text = 'close'
+closeBottum.small = True
+def closewindow():
+    win.close()
+closeBottum.onClick = closewindow
+finalBottum = mset.UIButton()
+finalBottum.text = 'Go!'
+
+#Set GUI
+win.addElement(infolabel)
+win.addReturn()
+win.addElement(hilabel)
+win.addElement(hifolder)
+win.addReturn()
+win.addElement(lowlabel)
+win.addElement(lowfolder)
+win.addReturn()
+win.addElement(list)
+win.addSpace(30)
+win.addElement(rotationlabel)
+win.addElement(rotationX)
+win.addElement(rotationY)
+win.addElement(rotationZ)
+win.addReturn()
+win.addElement(finalBottum)
+win.addStretchSpace()
+win.addElement(closeBottum)
+
+
+#search all files from bake folder
+def MeshInfo():
+    allHighfoldermesh = os.listdir(hifolder.value)
+    allHighmesh = []
+    sameHighLowmesh = []
+    #Get FBX files
+    currentSet = ''
+    if list.selectedItem == 0:
+        currentSet = 'FBX'
+    elif list.selectedItem == 1:
+        currentSet = 'OBJ'
+    for a in allHighfoldermesh:
+        Search_hi = re.search(r"_hi$",a.split('.')[0],re.I )
+        if Search_hi != None:
+            if Search_hi.group() == "_hi":
+                if (a.split('.')[1]).upper() == currentSet:
+                    allHighmesh.append(a)
+    allLowfoldermesh = os.listdir(lowfolder.value)
+    allLowmesh = []
+    for b in allLowfoldermesh:
+        if (b.split('.')[1]).upper() == 'FBX':
+            allLowmesh.append(b)
+        for a in allHighmesh:
+            if b.split('.')[0] == a.split('_hi')[0]:
+                c = [a,b]
+                sameHighLowmesh.append(c)
+    return sameHighLowmesh
+
+# print (MeshInfo())
+#[['abc1_hi.OBJ', 'abc1.FBX']]
+
+def CheckLastLetter(foldervalue):
+    Newfoldervalue = ''
+    if re.search(r'\\$',foldervalue) == None:
+        Newfoldervalue = foldervalue + '\\'
+    else:
+        Newfoldervalue = foldervalue
+    return Newfoldervalue
+
+def Go():
+    # create Baker
+    bakeroot = mset.BakerObject()
+
+    # check last letter should be '\'
+    ModifiedHifolder = CheckLastLetter(hifolder.value)
+    ModifiedLowfolder = CheckLastLetter(lowfolder.value)
+
+    #import Lowmesh and Himesh
+    for i in MeshInfo():
+        lowpoly = mset.importModel(ModifiedLowfolder + i[1])
+        Lowmesh_name = i[1].split('.')[0]
+        bakegroup = mset.BakerObject.addGroup(bakeroot)
+        bakegroup.name = Lowmesh_name
+        lowpoly.name = Lowmesh_name
+        hipoly = mset.importModel(ModifiedHifolder + i[0])
+        Himesh_name = i[0].split('.')[0]
+        hipoly.name = Himesh_name
+        hipoly.rotation = [rotationX.value, rotationY.value, rotationZ.value]
+        highlowfolder = bakegroup.getChildren()
+        for x in highlowfolder:
+            if x.name == 'Low':
+                lowpoly.parent = x
+            if x.name == 'High':
+                hipoly.parent = x
+
+
+finalBottum.onClick = Go
+
