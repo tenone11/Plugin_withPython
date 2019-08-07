@@ -1,4 +1,3 @@
-
 import mset,os,re
 
 defaultLowPolyPath = 'D:\\bake\\low\\'
@@ -82,12 +81,19 @@ def MeshInfo():
     allLowfoldermesh = os.listdir(lowfolder.value)
     allLowmesh = []
     for b in allLowfoldermesh:
-        if (b.split('.')[1]).upper() == 'FBX':
-            allLowmesh.append(b)
-        for a in allHighmesh:
-            if b.split('.')[0] == a.split('_hi')[0]:
-                c = [a,b]
-                sameHighLowmesh.append(c)
+        try:
+            if (b.split('.')[1]).upper() == 'FBX':
+                Search_hi = re.search(r"_hi$", b.split('.')[0], re.I)
+                if Search_hi == None:
+                    b = b.lower()
+                    allLowmesh.append(b)
+            for a in allHighmesh:
+                a = a.lower()
+                if b.split('.')[0] == a.split('_hi')[0]:
+                    c = [a,b]
+                    sameHighLowmesh.append(c)
+        except:
+            print ('One name is not correct')
     return sameHighLowmesh
 
 # print (MeshInfo())
@@ -129,4 +135,3 @@ def Go():
 
 
 finalBottum.onClick = Go
-
